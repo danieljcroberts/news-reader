@@ -813,3 +813,13 @@ init();
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js').catch(() => {});
 }
+
+if (IS_NATIVE && window.Capacitor?.Plugins?.App) {
+  window.Capacitor.Plugins.App.addListener('backButton', () => {
+    if (catPicker.classList.contains('open'))     { closeMovePicker(); return; }
+    if (settingsPanel.classList.contains('open')) { closeSettings();   return; }
+    if (state.view === 'article')                 { closeArticle();    return; }
+    // On feed view — exit the app
+    window.Capacitor.Plugins.App.exitApp();
+  });
+}
