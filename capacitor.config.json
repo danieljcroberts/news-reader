@@ -1,0 +1,10 @@
+{
+  "appId": "com.danieljcroberts.newsreader",
+  "appName": "News Reader",
+  "webDir": "public",
+  "plugins": {
+    "CapacitorHttp": {
+      "enabled": true
+    }
+  }
+}

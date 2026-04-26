@@ -6,6 +6,101 @@ const LS_IDX       = 'news_feed_index';
 const BATCH_SIZE   = 15;
 const DEFAULT_CATS = ['General', 'Technology', 'Artificial Intelligence', 'Science', 'Business'];
 
+// Running as a Capacitor native app (no server needed)
+const IS_NATIVE = typeof window.Capacitor !== 'undefined' && Capacitor.isNativePlatform();
+
+// Default feeds mirrored from server.js — used in native mode
+const DEFAULT_FEEDS = [
+  { id: 'bbc-news',      name: 'BBC News',             category: 'General',              url: 'https://feeds.bbci.co.uk/news/rss.xml',                                    enabled: true  },
+  { id: 'reuters',       name: 'Reuters',               category: 'General',              url: 'https://feeds.reuters.com/reuters/topNews',                                 enabled: false },
+  { id: 'guardian',      name: 'The Guardian',          category: 'General',              url: 'https://www.theguardian.com/world/rss',                                     enabled: false },
+  { id: 'npr',           name: 'NPR News',              category: 'General',              url: 'https://feeds.npr.org/1001/rss.xml',                                        enabled: false },
+  { id: 'ap',            name: 'AP News',               category: 'General',              url: 'https://feeds.apnews.com/rss/apf-topnews',                                  enabled: false },
+  { id: 'aljazeera',     name: 'Al Jazeera',            category: 'General',              url: 'https://www.aljazeera.com/xml/rss/all.xml',                                 enabled: false },
+  { id: 'bbc-tech',      name: 'BBC Technology',        category: 'Technology',           url: 'https://feeds.bbci.co.uk/news/technology/rss.xml',                          enabled: true  },
+  { id: 'theverge',      name: 'The Verge',             category: 'Technology',           url: 'https://www.theverge.com/rss/index.xml',                                    enabled: false },
+  { id: 'arstechnica',   name: 'Ars Technica',          category: 'Technology',           url: 'https://feeds.arstechnica.com/arstechnica/index',                           enabled: false },
+  { id: 'wired',         name: 'Wired',                 category: 'Technology',           url: 'https://www.wired.com/feed/rss',                                            enabled: false },
+  { id: 'techcrunch',    name: 'TechCrunch',            category: 'Technology',           url: 'https://techcrunch.com/feed/',                                              enabled: false },
+  { id: 'hackernews',    name: 'Hacker News',           category: 'Technology',           url: 'https://hnrss.org/frontpage',                                               enabled: false },
+  { id: 'newscientist',  name: 'New Scientist',         category: 'Science',              url: 'https://www.newscientist.com/feed/home/',                                   enabled: false },
+  { id: 'nasa',          name: 'NASA',                  category: 'Science',              url: 'https://www.nasa.gov/rss/dyn/breaking_news.rss',                            enabled: false },
+  { id: 'sciencedaily',  name: 'Science Daily',         category: 'Science',              url: 'https://www.sciencedaily.com/rss/all.xml',                                  enabled: false },
+  { id: 'bbc-business',  name: 'BBC Business',          category: 'Business',             url: 'https://feeds.bbci.co.uk/news/business/rss.xml',                            enabled: false },
+  { id: 'ai-venturebeat',name: 'VentureBeat AI',        category: 'Artificial Intelligence', url: 'https://venturebeat.com/category/ai/feed/',                              enabled: false },
+  { id: 'ai-mit-tr',     name: 'MIT Tech Review',       category: 'Artificial Intelligence', url: 'https://www.technologyreview.com/feed/',                                 enabled: false },
+  { id: 'ai-verge',      name: 'The Verge AI',          category: 'Artificial Intelligence', url: 'https://www.theverge.com/rss/ai-artificial-intelligence/index.xml',      enabled: false },
+  { id: 'ai-openai',     name: 'OpenAI News',           category: 'Artificial Intelligence', url: 'https://openai.com/news/rss.xml',                                        enabled: false },
+  { id: 'ai-deepmind',   name: 'DeepMind Blog',         category: 'Artificial Intelligence', url: 'https://deepmind.google/blog/rss.xml',                                   enabled: false },
+  { id: 'ai-googleai',   name: 'Google AI Blog',        category: 'Artificial Intelligence', url: 'https://blog.research.google/feeds/posts/default',                       enabled: false },
+  { id: 'ai-huggingface',name: 'Hugging Face',          category: 'Artificial Intelligence', url: 'https://huggingface.co/blog/feed.xml',                                   enabled: false },
+  { id: 'ai-msresearch', name: 'Microsoft Research',    category: 'Artificial Intelligence', url: 'https://www.microsoft.com/en-us/research/feed/',                         enabled: false },
+  { id: 'ai-ainews',     name: 'AI News',               category: 'Artificial Intelligence', url: 'https://artificialintelligence-news.com/feed/',                          enabled: false },
+  { id: 'ai-ieee',       name: 'IEEE Spectrum AI',      category: 'Artificial Intelligence', url: 'https://spectrum.ieee.org/feeds/topic/artificial-intelligence.rss',      enabled: false },
+  { id: 'ai-bair',       name: 'BAIR Blog',             category: 'Artificial Intelligence', url: 'https://bair.berkeley.edu/blog/feed.xml',                                enabled: false },
+  { id: 'ai-kdnuggets',  name: 'KDnuggets',             category: 'Artificial Intelligence', url: 'https://www.kdnuggets.com/feed',                                         enabled: false },
+  { id: 'ai-tds',        name: 'Towards Data Science',  category: 'Artificial Intelligence', url: 'https://towardsdatascience.com/feed',                                    enabled: false },
+  { id: 'ai-gradient',   name: 'The Gradient',          category: 'Artificial Intelligence', url: 'https://thegradient.pub/rss/',                                           enabled: false },
+  { id: 'ai-alignment',  name: 'AI Alignment Forum',    category: 'Artificial Intelligence', url: 'https://www.alignmentforum.org/feed.xml',                                enabled: false },
+  { id: 'ai-lastweek',   name: 'Last Week in AI',       category: 'Artificial Intelligence', url: 'https://lastweekin.ai/feed',                                             enabled: false },
+];
+
+// RSS parser instance for native mode (rss-parser browser build loaded via <script>)
+const nativeRssParser = typeof RSSParser !== 'undefined' ? new RSSParser({
+  customFields: {
+    item: [
+      ['media:thumbnail', 'mediaThumbnail'],
+      ['media:content',   'mediaContent'],
+      ['media:group',     'mediaGroup'],
+      ['content:encoded', 'contentEncoded'],
+      ['yt:videoId',      'ytVideoId'],
+    ],
+  },
+}) : null;
+
+function getItemImageClient(item) {
+  if (item.mediaThumbnail) {
+    if (item.mediaThumbnail.$ && item.mediaThumbnail.$.url) return item.mediaThumbnail.$.url;
+    if (typeof item.mediaThumbnail === 'string') return item.mediaThumbnail;
+  }
+  if (item.mediaGroup) {
+    const g = Array.isArray(item.mediaGroup) ? item.mediaGroup[0] : item.mediaGroup;
+    const thumb = g?.['media:thumbnail']?.[0] ?? g?.['media:thumbnail'];
+    if (thumb?.$?.url) return thumb.$.url;
+  }
+  if (item.mediaContent) {
+    if (Array.isArray(item.mediaContent)) {
+      const mc = item.mediaContent.find(m => m.$ && m.$.url);
+      if (mc) return mc.$.url;
+    }
+    if (item.mediaContent.$ && item.mediaContent.$.url) return item.mediaContent.$.url;
+  }
+  if (item.enclosure?.url && /image/i.test(item.enclosure.type || '')) return item.enclosure.url;
+  const html = item.contentEncoded || item.content || '';
+  const m = html.match(/<img[^>]+src=["']([^"']+)["']/i);
+  return m ? m[1] : null;
+}
+
+async function loadFeedNative(url) {
+  const res  = await fetch(url);
+  const text = await res.text();
+  const feed = await nativeRssParser.parseString(text);
+  return {
+    title: feed.title || 'Feed',
+    items: feed.items.map(item => ({
+      id:          item.guid || item.link || item.title || '',
+      title:       item.title || '',
+      link:        item.link  || '',
+      description: item.contentSnippet || item.summary || '',
+      image:       getItemImageClient(item),
+      pubDate:     item.pubDate || item.isoDate || null,
+      author:      item.creator || item.author  || '',
+      ytVideoId:   item.ytVideoId || null,
+    })),
+    fetchedAt: Date.now(),
+  };
+}
+
 // ── State ────────────────────────────────────────────────────────────────────
 const state = {
   feeds:            [],
@@ -92,20 +187,45 @@ function youtubeVideoId(url, ytVideoId) {
 
 // ── Config ────────────────────────────────────────────────────────────────────
 async function loadConfig() {
-  const res  = await fetch('/api/config');
-  const data = await res.json();
-  state.feeds            = data.feeds            ?? data; // handle legacy plain-array
-  state.customCategories = data.customCategories ?? [];
-  const saved = parseInt(localStorage.getItem(LS_IDX) || '0', 10);
-  state.activeIndex = Math.min(saved, Math.max(0, enabledFeeds().length - 1));
+  let feeds, customCategories;
+
+  if (IS_NATIVE) {
+    const saved = JSON.parse(localStorage.getItem('news_config') || 'null');
+    customCategories = saved?.customCategories ?? [];
+    const savedFeeds = saved?.feeds ?? null;
+    if (!savedFeeds) {
+      feeds = [...DEFAULT_FEEDS];
+    } else {
+      const existingIds = new Set(savedFeeds.map(f => f.id));
+      feeds = [
+        ...savedFeeds.map(f => f.category ? f : { ...f, category: DEFAULT_FEEDS.find(d => d.id === f.id)?.category || 'General' }),
+        ...DEFAULT_FEEDS.filter(d => !existingIds.has(d.id)),
+      ];
+    }
+  } else {
+    const res  = await fetch('/api/config');
+    const data = await res.json();
+    feeds            = data.feeds            ?? data;
+    customCategories = data.customCategories ?? [];
+  }
+
+  state.feeds            = feeds;
+  state.customCategories = customCategories;
+  const savedIdx = parseInt(localStorage.getItem(LS_IDX) || '0', 10);
+  state.activeIndex = Math.min(savedIdx, Math.max(0, enabledFeeds().length - 1));
 }
 
 async function saveConfig() {
-  await fetch('/api/config', {
-    method:  'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body:    JSON.stringify({ feeds: state.feeds, customCategories: state.customCategories }),
-  });
+  const payload = { feeds: state.feeds, customCategories: state.customCategories };
+  if (IS_NATIVE) {
+    localStorage.setItem('news_config', JSON.stringify(payload));
+  } else {
+    await fetch('/api/config', {
+      method:  'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(payload),
+    });
+  }
 }
 
 function enabledFeeds() { return state.feeds.filter(f => f.enabled); }
@@ -140,9 +260,9 @@ async function loadFeed(feedIndex, direction = 0) {
   }
 
   try {
-    const res  = await fetch(`/api/feed?url=${encodeURIComponent(feed.url)}`);
-    if (!res.ok) throw new Error(await res.text());
-    const data = await res.json();
+    const data = IS_NATIVE
+      ? await loadFeedNative(feed.url)
+      : await fetch(`/api/feed?url=${encodeURIComponent(feed.url)}`).then(r => { if (!r.ok) throw new Error(); return r.json(); });
     lsSet(feed.url, data);
     if (state.activeIndex === feedIndex && state.view === 'feed') {
       initFeedItems(data.items, cached ? 0 : direction);
@@ -313,9 +433,23 @@ async function openArticle(url, item) {
     </div>`;
 
   try {
-    const res = await fetch(`/api/article?url=${encodeURIComponent(url)}`);
-    if (!res.ok) throw new Error();
-    const data = await res.json();
+    let data;
+    if (IS_NATIVE) {
+      const html = await fetch(url, {
+        headers: { 'Accept': 'text/html,application/xhtml+xml,*/*', 'Accept-Language': 'en-GB,en;q=0.9' },
+      }).then(r => r.text());
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+      const base = doc.createElement('base');
+      base.href = url;
+      doc.head.prepend(base);
+      const article = new Readability(doc).parse();
+      if (!article) throw new Error('Could not extract article');
+      data = { title: article.title, content: article.content, byline: article.byline, siteName: article.siteName, publishedTime: article.publishedTime };
+    } else {
+      const res = await fetch(`/api/article?url=${encodeURIComponent(url)}`);
+      if (!res.ok) throw new Error();
+      data = await res.json();
+    }
     if (state.currentArticleUrl !== url) return;
     articleSite.textContent = data.siteName || '';
     articleContent.innerHTML = `
