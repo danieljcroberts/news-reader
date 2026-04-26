@@ -1,0 +1,15 @@
+services:
+  news-reader:
+    build: .
+    container_name: news-reader
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+      - "3443:3443"
+    environment:
+      - DATA_DIR=/app/data
+    volumes:
+      - news-reader-data:/app/data
+
+volumes:
+  news-reader-data:
