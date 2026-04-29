@@ -234,6 +234,21 @@ html, body {
 }
 .card:active { transform: scale(0.98); box-shadow: none; }
 
+/* ── Old article indicators ───────────────────────────────── */
+.card--aged .meta-time {
+  color: #b8860b;
+}
+.card--old {
+  opacity: 0.72;
+}
+.card--old .meta-time {
+  color: #a0522d;
+}
+.card--old .card-image img,
+.card--aged .card-image img {
+  filter: saturate(0.65);
+}
+
 .card-image {
   width: 100%;
   aspect-ratio: 16/9;

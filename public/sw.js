@@ -1,6 +1,6 @@
 'use strict';
 
-const CACHE = 'news-reader-v1';
+const CACHE = 'news-reader-v2';
 const STATIC_ASSETS = ['/', '/app.js', '/style.css', '/manifest.json', '/icon.svg'];
 
 self.addEventListener('install', e => {

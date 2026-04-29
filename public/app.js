@@ -303,11 +303,16 @@ function setStatus(msg, autoHide) {
 }
 
 // ── Infinite scroll ───────────────────────────────────────────────────────────
+const WEEK_MS  = 7  * 24 * 60 * 60 * 1000;
+const MONTH_MS = 30 * 24 * 60 * 60 * 1000;
+
 let scrollObserver = null;
+let loadingMore    = false;
 
 function initFeedItems(items, direction) {
   state.allItems    = sortNewest(items);
   state.renderCount = 0;
+  loadingMore       = false;
   const animClass = direction > 0 ? 'feed-entering-right'
                   : direction < 0 ? 'feed-entering-left' : '';
   feedContainer.innerHTML = '';
@@ -327,8 +332,11 @@ function initFeedItems(items, direction) {
 function setupScrollObserver(sentinel) {
   if (scrollObserver) scrollObserver.disconnect();
   scrollObserver = new IntersectionObserver(entries => {
-    if (entries[0].isIntersecting && state.view === 'feed') loadMoreItems();
-  }, { root: feedContainer, rootMargin: '0px 0px 300px 0px', threshold: 0 });
+    if (entries[0].isIntersecting && state.view === 'feed' && !loadingMore) {
+      loadingMore = true;
+      requestAnimationFrame(() => { loadMoreItems(); loadingMore = false; });
+    }
+  }, { root: feedContainer, rootMargin: '0px 0px 400px 0px', threshold: 0 });
   scrollObserver.observe(sentinel);
 }
 
@@ -338,15 +346,17 @@ function loadMoreItems() {
   const batch = allItems.slice(renderCount, renderCount + BATCH_SIZE);
   state.renderCount += batch.length;
   const sentinel = $('feed-sentinel');
+  const now = Date.now();
   const frag = document.createDocumentFragment();
   batch.forEach(item => {
     const el = document.createElement('article');
-    el.className = 'card';
-    el.dataset.url     = item.link        || '';
-    el.dataset.title   = item.title       || '';
-    el.dataset.desc    = item.description || '';
-    el.dataset.img     = item.image       || '';
-    el.dataset.ytId    = item.ytVideoId   || '';
+    const age = item.pubDate ? now - new Date(item.pubDate).getTime() : 0;
+    el.className = 'card' + (age > MONTH_MS ? ' card--old' : age > WEEK_MS ? ' card--aged' : '');
+    el.dataset.url   = item.link        || '';
+    el.dataset.title = item.title       || '';
+    el.dataset.desc  = item.description || '';
+    el.dataset.img   = item.image       || '';
+    el.dataset.ytId  = item.ytVideoId   || '';
     el.innerHTML = cardInnerHtml(item);
     frag.appendChild(el);
   });
