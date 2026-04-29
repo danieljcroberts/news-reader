@@ -63,6 +63,17 @@ const DEFAULT_FEEDS = [
   { id: 'sciencedaily',  name: 'Science Daily',     category: 'Science',  url: 'https://www.sciencedaily.com/rss/all.xml',                enabled: false },
   // Business
   { id: 'bbc-business',  name: 'BBC Business',        category: 'Business',            url: 'https://feeds.bbci.co.uk/news/business/rss.xml',                              enabled: false },
+  // Norwegian
+  { id: 'nrk',           name: 'NRK Nyheter',         category: 'Norwegian',           url: 'https://www.nrk.no/toppsaker.rss',                                            enabled: false },
+  { id: 'vg',            name: 'VG',                  category: 'Norwegian',           url: 'https://www.vg.no/rss/feed/',                                                 enabled: false },
+  { id: 'dagbladet',     name: 'Dagbladet',           category: 'Norwegian',           url: 'https://www.dagbladet.no/rss',                                                enabled: false },
+  { id: 'aftenposten',   name: 'Aftenposten',         category: 'Norwegian',           url: 'https://www.aftenposten.no/rss/',                                             enabled: false },
+  { id: 'tv2',           name: 'TV 2 Nyheter',        category: 'Norwegian',           url: 'https://www.tv2.no/rss/',                                                     enabled: false },
+  { id: 'nettavisen',    name: 'Nettavisen',          category: 'Norwegian',           url: 'https://www.nettavisen.no/rss.xml',                                           enabled: false },
+  { id: 'e24',           name: 'E24',                 category: 'Norwegian',           url: 'https://e24.no/rss',                                                          enabled: false },
+  { id: 'dn',            name: 'Dagens Næringsliv',   category: 'Norwegian',           url: 'https://www.dn.no/rss',                                                       enabled: false },
+  { id: 'bt',            name: 'Bergens Tidende',     category: 'Norwegian',           url: 'https://www.bt.no/rss/',                                                      enabled: false },
+  { id: 'nrk-sport',     name: 'NRK Sport',           category: 'Norwegian',           url: 'https://www.nrk.no/sport/toppsaker.rss',                                      enabled: false },
   // Artificial Intelligence — news & industry
   { id: 'ai-venturebeat',  name: 'VentureBeat AI',    category: 'Artificial Intelligence', url: 'https://venturebeat.com/category/ai/feed/',                               enabled: false },
   { id: 'ai-mit-tr',       name: 'MIT Tech Review',   category: 'Artificial Intelligence', url: 'https://www.technologyreview.com/feed/',                                  enabled: false },
