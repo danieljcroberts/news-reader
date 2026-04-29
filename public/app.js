@@ -121,6 +121,8 @@ const state = {
   allItems:         [],
   renderCount:      0,
   layout: localStorage.getItem('news_layout') || 'full',
+  theme:  localStorage.getItem('news_theme')  || 'default',
+  mode:   localStorage.getItem('news_mode')   || 'auto',
   movingFeedId: null,
 };
 
@@ -490,6 +492,36 @@ function closeArticle() {
   articleSite.textContent = '';
 }
 
+// ── Appearance ────────────────────────────────────────────────────────────────
+const THEME_COLOURS = {
+  default: '#BB1919',
+  ocean:   '#0077CC',
+  forest:  '#2D7A4F',
+  sunset:  '#E05A00',
+  violet:  '#7B2FBE',
+  slate:   '#4A5568',
+};
+
+function applyAppearance(theme, mode) {
+  const html = document.documentElement;
+  html.dataset.theme = theme === 'default' ? '' : theme;
+  html.dataset.mode  = mode;
+  const colour = THEME_COLOURS[theme] || THEME_COLOURS.default;
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', colour);
+  document.querySelectorAll('.mode-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.mode === mode));
+  document.querySelectorAll('.theme-swatch').forEach(b =>
+    b.classList.toggle('active', b.dataset.theme === theme));
+}
+
+function setAppearance(theme, mode) {
+  state.theme = theme;
+  state.mode  = mode;
+  localStorage.setItem('news_theme', theme);
+  localStorage.setItem('news_mode',  mode);
+  applyAppearance(theme, mode);
+}
+
 // ── Layout ────────────────────────────────────────────────────────────────────
 const LAYOUTS = ['full', 'medium', 'compact', 'list'];
 
@@ -760,6 +792,10 @@ function setupEvents() {
 
   document.querySelectorAll('.layout-btn').forEach(btn =>
     btn.addEventListener('click', () => setLayout(btn.dataset.layout)));
+  document.querySelectorAll('.mode-btn').forEach(btn =>
+    btn.addEventListener('click', () => setAppearance(state.theme, btn.dataset.mode)));
+  document.querySelectorAll('.theme-swatch').forEach(btn =>
+    btn.addEventListener('click', () => setAppearance(btn.dataset.theme, state.mode)));
 
   $('btn-add-feed').addEventListener('click', () => {
     const name = $('input-feed-name').value.trim();
@@ -801,6 +837,7 @@ async function init() {
   setupGestures();
   setupEvents();
   applyLayout(state.layout);
+  applyAppearance(state.theme, state.mode);
 
   try {
     await loadConfig();
